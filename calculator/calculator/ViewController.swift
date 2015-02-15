@@ -11,6 +11,9 @@ import UIKit
 class ViewController: UIViewController {
 
     @IBOutlet weak var display: UILabel!
+    @IBOutlet weak var historyDisplay: UILabel!
+
+    
     var isTyping = false
     var operandStack = Array<Double>()
     
@@ -24,9 +27,24 @@ class ViewController: UIViewController {
             isTyping = false
         }
     }
+    
+    func initialize () {
+        displayValue = 0
+        isTyping = false
+        operandStack.removeAll(keepCapacity: false)
+        historyDisplay.text = ""
+    }
+    
 
+   
+    
     @IBAction func appendDigit(sender: UIButton) {
-        let digit = sender.currentTitle!
+        var digit = ""
+        if ("π" == sender.currentTitle!) {
+            digit = "\(M_PI)"
+        } else {
+            digit = sender.currentTitle!
+        }
         if(isTyping) {
             display.text = display.text! + digit
         } else {
@@ -36,8 +54,16 @@ class ViewController: UIViewController {
 
     }
     
+    @IBAction func enterDecimal() {
+        if(display.text?.rangeOfString(".") == nil){
+            display.text = display.text! + "."
+            isTyping = true
+        }
+        
+    }
+    
     @IBAction func operate(sender: UIButton) {
-        let operation = sender.currentTitle!
+        let operationKey = sender.currentTitle!
         if (operandStack.count < 2) {
             return
         }
@@ -45,28 +71,39 @@ class ViewController: UIViewController {
             enter()
         }
         
-        switch operation {
-            case "×": performOperation {$0 * $1}
-            case "÷": performOperation {$1 / $0}
-            case "+": performOperation {$0 + $1}
-            case "-": performOperation {$0 - $1}
-            case "√": performOperation {sqrt($0)}
+        switch operationKey {
+            case "×": performOperation(operationKey, {$0 * $1})
+            case "÷": performOperation(operationKey, {$1 / $0})
+            case "+": performOperation(operationKey, {$0 + $1})
+            case "-": performOperation(operationKey, {$0 - $1})
+            case "√": performOperation(operationKey, {sqrt($0)})
+            case "sin": performOperation(operationKey, {sin($0)})
+            case "cos": performOperation(operationKey, {cos($0)})
             default: break
         }
     }
     
-    func performOperation(operation: (Double, Double) -> Double) {
+    func performOperation(operationKey: String, operation: (Double, Double) -> Double) {
         if (operandStack.count >= 2) {
-            displayValue = operation(operandStack.removeLast(), operandStack.removeLast())
+            var firstOperand = operandStack.removeLast()
+            var secondOperand = operandStack.removeLast()
+            historyDisplay.text = "\(firstOperand) \(operationKey) \(secondOperand)"
+            displayValue = operation(firstOperand, secondOperand)
             enter()
         }
     }
     
-    func performOperation(operation: Double -> Double) {
+    func performOperation(operationKey: String, operation: Double -> Double) {
         if (operandStack.count >= 1) {
-            displayValue = operation(operandStack.removeLast())
+            var theOperand = operandStack.removeLast()
+            historyDisplay.text = "\(operationKey) (\(theOperand))"
+            displayValue = operation(theOperand)
             enter()
         }
+    }
+    
+    @IBAction func clear() {
+        initialize()
     }
     
     @IBAction func enter() {
